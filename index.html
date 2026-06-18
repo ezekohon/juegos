@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juegos — Eze & Eli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.09);
+      --border-strong: rgba(0,0,0,0.18);
+      --text: #1c1c1c;
+      --text-muted: #6b6b6b;
+      --text-faint: #999;
+      --accent: #3b5bdb;
+      --accent-bg: #eef1ff;
+      --accent-border: #748ffc;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 18px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111110;
+        --surface: #1c1c1b;
+        --border: rgba(255,255,255,0.08);
+        --border-strong: rgba(255,255,255,0.18);
+        --text: #f0ede8;
+        --text-muted: #9a9a96;
+        --text-faint: #666;
+        --accent: #748ffc;
+        --accent-bg: #1a2040;
+        --accent-border: #748ffc;
+      }
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ─── Header ─── */
+    header {
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border-strong);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1 {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .total-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 0.5px solid var(--border-strong);
+      white-space: nowrap;
+    }
+
+    .refresh-btn {
+      background: none;
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+
+    .refresh-btn:hover { background: var(--bg); color: var(--text); }
+
+    /* ─── Main ─── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* ─── Filters ─── */
+    .filters {
+      background: var(--surface);
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .filter-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-faint);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .chip {
+      cursor: pointer;
+      padding: 5px 13px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 400;
+      font-family: inherit;
+      border: 0.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--text-muted);
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .chip:hover { background: var(--bg); color: var(--text); }
+
+    .chip.active {
+      background: var(--accent-bg);
+      color: var(--accent);
+      border-color: var(--accent-border);
+      font-weight: 500;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-input {
+      width: 58px;
+      padding: 5px 8px;
+      font-size: 14px;
+      font-family: inherit;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.12s;
+    }
+
+    .player-input:focus { border-color: var(--accent-border); }
+
+    /* ─── Results bar ─── */
+    .results-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      min-height: 32px;
+    }
+
+    .results-count {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .random-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      border: 0.5px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.12s;
+    }
+
+    .random-btn:hover { background: var(--bg); }
+    .random-btn:active { transform: scale(0.97); }
+
+    /* ─── Games grid ─── */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+      gap: 10px;
+    }
+
+    .game-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      transition: border-color 0.12s, transform 0.12s;
+    }
+
+    .game-card:hover { border-color: var(--border-strong); }
+
+    .game-card.highlight {
+      border: 2px solid var(--accent-border);
+      background: var(--accent-bg);
+    }
+
+    .game-name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.35;
+      margin-bottom: 3px;
+    }
+
+    .game-cat {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .game-badges {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 400;
+    }
+
+    .badge-players {
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 0.5px solid var(--border-strong);
+    }
+
+    .badge-eze  { background: #e1f5ee; color: #0a5540; }
+    .badge-eli  { background: #eeedfe; color: #3c3489; }
+
+    @media (prefers-color-scheme: dark) {
+      .badge-eze { background: #0d3328; color: #5dcaa5; }
+      .badge-eli { background: #1e1a40; color: #afa9ec; }
+    }
+
+    /* ─── States ─── */
+    .state-box {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .state-icon { font-size: 32px; display: block; margin-bottom: 10px; }
+
+    .error-box {
+      background: var(--surface);
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .error-box strong { color: var(--text); }
+    .error-box ol { padding-left: 1.25rem; margin-top: 10px; }
+    .error-box li { margin-bottom: 4px; }
+    .error-box code {
+      display: block;
+      margin-top: 12px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      color: var(--text-faint);
+      word-break: break-all;
+      background: var(--bg);
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .header-inner { padding: 0.9rem 1rem; }
+      main { padding: 1rem; }
+      .filters { padding: 1rem; gap: 1rem; }
+      .games-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <h1>🎲 Juegos de Eze &amp; Eli</h1>
+      <span class="total-badge" id="total-badge">Cargando…</span>
+    </div>
+    <button class="refresh-btn" onclick="loadGames()" aria-label="Recargar datos">
+      ↻ Actualizar
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="filters">
+    <div class="filter-group">
+      <div class="filter-label">Jugadores</div>
+      <div class="player-row">
+        <input type="number" class="player-input" id="player-count" min="1" max="20" value="1" aria-label="Cantidad de jugadores">
+        <span style="font-size:13px; color:var(--text-muted)">personas</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Dueño</div>
+      <div class="chip-row" id="owner-chips">
+        <button class="chip active" data-value="all">Todos</button>
+        <button class="chip" data-value="Eze">Eze</button>
+        <button class="chip" data-value="Eli">Eli</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Categoría</div>
+      <div class="chip-row" id="cat-chips">
+        <button class="chip active" data-value="all">Todas</button>
+        <button class="chip" data-value="party">Party</button>
+        <button class="chip" data-value="estrategia">Estrategia</button>
+        <button class="chip" data-value="cartas">Cartas</button>
+        <button class="chip" data-value="coop">Cooperativo</button>
+        <button class="chip" data-value="abstracto">Abstracto</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-bar">
+    <span class="results-count" id="results-count"></span>
+    <button class="random-btn" onclick="pickRandom()">🎲 Sorprendeme</button>
+  </div>
+
+  <div id="content">
+    <div class="state-box"><span class="state-icon">⏳</span>Cargando juegos…</div>
+  </div>
+</main>
+
+<script>
+  const SHEET_ID = '1nw3LLBVFaYE_tMb5wmzL-Bu_I7FJYt4JFQkJuMQLjyA';
+  const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?output=csv`;
+
+  let allGames      = [];
+  let selectedOwner = 'all';
+  let selectedCat   = 'all';
+  let highlighted   = null;
+
+  /* ── Parse "Best for" column ── */
+  function parsePlayerCount(raw) {
+    if (!raw || !raw.trim()) return { min: 1, max: 99 };
+    const s = raw.trim().toLowerCase().replace(/\(.*?\)/g, '').trim();
+    if (s.includes('+') || s.includes('o +')) {
+      const n = parseInt(s);
+      return { min: isNaN(n) ? 1 : n, max: 99 };
+    }
+    const parts = s.split(/[-–]/);
+    if (parts.length === 2) {
+      const a = parseInt(parts[0]), b = parseInt(parts[1]);
+      if (!isNaN(a) && !isNaN(b)) return { min: a, max: b };
+    }
+    const n = parseInt(s);
+    return isNaN(n) ? { min: 1, max: 99 } : { min: n, max: n };
+  }
+
+  /* ── Minimal CSV parser (handles quoted fields) ── */
+  function parseCSVLine(line) {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim());
+    return cols;
+  }
+
+  function parseCSV(text) {
+    const lines = text.replace(/\r/g, '').split('\n');
+    const games = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cols   = parseCSVLine(line);
+      const name   = cols[0] || '';
+      const owner  = (cols[1] || '').trim();
+      const cat    = (cols[2] || '').trim();
+      const bestFor = (cols[3] || '').trim();
+      if (!name) continue;
+      const { min, max } = parsePlayerCount(bestFor);
+      games.push({ name, owner, cat, min, max, bestForRaw: bestFor });
+    }
+    return games;
+  }
+
+  /* ── Category matching ── */
+  const CAT_KEYWORDS = {
+    party:      ['party', 'charlar', 'familiar', 'roles', 'preguntas', 'misterio'],
+    estrategia: ['estrategia', 'deckbuilder', 'tile', 'territory', 'city', 'colocación', 'building'],
+    cartas:     ['cartas', 'card'],
+    coop:       ['coop'],
+    abstracto:  ['abstracto'],
+  };
+
+  function catMatch(game, cat) {
+    if (cat === 'all') return true;
+    const gc = game.cat.toLowerCase();
+    return (CAT_KEYWORDS[cat] || []).some(k => gc.includes(k));
+  }
+
+  /* ── Filtering ── */
+  function getPlayers() {
+    const v = parseInt(document.getElementById('player-count').value);
+    return isNaN(v) ? 1 : Math.max(1, v);
+  }
+
+  function getFiltered() {
+    const p = getPlayers();
+    return allGames.filter(g =>
+      g.min <= p && g.max >= p &&
+      (selectedOwner === 'all' || g.owner === selectedOwner) &&
+      catMatch(g, selectedCat)
+    );
+  }
+
+  /* ── Render ── */
+  function playerLabel(g) {
+    if (g.max >= 99) return g.min + '+';
+    if (g.min === g.max) return String(g.min);
+    return g.min + '–' + g.max;
+  }
+
+  function renderGames() {
+    const filtered  = getFiltered();
+    const content   = document.getElementById('content');
+    const countEl   = document.getElementById('results-count');
+    const n         = filtered.length;
+
+    countEl.textContent = n === 0 ? '' : n + ' juego' + (n === 1 ? '' : 's');
+
+    if (n === 0) {
+      content.innerHTML = '<div class="state-box"><span class="state-icon">😔</span>Ningún juego coincide con esos filtros.</div>';
+      return;
+    }
+
+    content.innerHTML = '<div class="games-grid">' + filtered.map(g => {
+      const hl          = highlighted === g.name ? ' highlight' : '';
+      const ownerClass  = g.owner.toLowerCase() === 'eze' ? 'badge-eze' : 'badge-eli';
+      const catDisplay  = g.cat || '—';
+      return `<div class="game-card${hl}">
+        <div class="game-name">${escHtml(g.name)}</div>
+        <div class="game-cat">${escHtml(catDisplay)}</div>
+        <div class="game-badges">
+          <span class="badge badge-players">👥 ${playerLabel(g)}</span>
+          <span class="badge ${ownerClass}">${escHtml(g.owner)}</span>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+
+    if (highlighted) {
+      const cards = content.querySelectorAll('.game-card');
+      cards.forEach(c => {
+        if (c.querySelector('.game-name').textContent === highlighted) {
+          setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+        }
+      });
+    }
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Random picker ── */
+  function pickRandom() {
+    const filtered = getFiltered();
+    if (!filtered.length) return;
+    highlighted = filtered[Math.floor(Math.random() * filtered.length)].name;
+    renderGames();
+  }
+
+  /* ── Load from Google Sheets ── */
+  async function loadGames() {
+    document.getElementById('content').innerHTML =
+      '<div class="state-box"><span class="state-icon">⏳</span>Cargando juegos…</div>';
+    document.getElementById('total-badge').textContent = 'Cargando…';
+    document.getElementById('results-count').textContent = '';
+    highlighted = null;
+
+    try {
+      const resp = await fetch(CSV_URL);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
+      const text = await resp.text();
+      allGames   = parseCSV(text);
+      if (allGames.length === 0) throw new Error('El sheet parece estar vacío o el formato no coincide.');
+      document.getElementById('total-badge').textContent = allGames.length + ' juegos';
+      renderGames();
+    } catch (err) {
+      document.getElementById('total-badge').textContent = 'Error';
+      document.getElementById('results-count').textContent = '';
+      document.getElementById('content').innerHTML = `
+        <div class="error-box">
+          <strong>No se pudo cargar el sheet.</strong>
+          Es necesario publicarlo como CSV primero:
+          <ol>
+            <li>Abrí el Google Sheet</li>
+            <li>Menú <strong>Archivo → Compartir → Publicar en la web</strong></li>
+            <li>Elegí la hoja y el formato <strong>Valores separados por comas (.csv)</strong></li>
+            <li>Hacé clic en <strong>Publicar</strong> y confirmá</li>
+            <li>Volvé a esta página y hacé clic en ↻ Actualizar</li>
+          </ol>
+          <code>Error: ${escHtml(err.message)}</code>
+        </div>`;
+    }
+  }
+
+  /* ── Event listeners ── */
+  document.getElementById('player-count').addEventListener('input', () => {
+    highlighted = null;
+    renderGames();
+  });
+
+  document.getElementById('owner-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#owner-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    selectedOwner = chip.dataset.value;
+    highlighted   = null;
+    renderGames();
+  });
+
+  document.getElementById('cat-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    selectedCat = chip.dataset.value;
+    highlighted = null;
+    renderGames();
+  });
+
+  loadGames();
+</script>
+</body>
+</html>
