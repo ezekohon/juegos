@@ -502,11 +502,6 @@
   // URL "Publicar en la web" del sheet (formato /d/e/.../pub que sí responde sin login)
   const CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTUKKHxfJeS8Ih9L05KXp3URPZVcMlRt6hgyAA2ko_sO_SDWJYHv-SKfe8yfR4n2-vanxR88mUDj0Sb/pub?output=csv';
 
-  /* ── BGG config ── */
-  const BGG_BATCH    = 20;
-  const CACHE_KEY    = 'bgg_cache_v1';
-  const CACHE_TTL    = 7 * 24 * 60 * 60 * 1000; // 7 días
-
   let allGames          = [];
   let selectedOwner     = 'all';
   let selectedCat       = 'all';
@@ -566,98 +561,23 @@
     return games;
   }
 
-  /* ───────────── BGG: cache ───────────── */
-  function readCache() {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return {};
-      const { ts, data } = JSON.parse(raw);
-      if (!data || Date.now() - ts > CACHE_TTL) return {};
-      return data; // { [bggId]: {...} }
-    } catch { return {}; }
-  }
-
-  function writeCache(data) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
-    } catch { /* storage lleno o no disponible: ignorar */ }
-  }
-
-  /* ───────────── BGG: fetch + parse ───────────── */
-  function chunk(arr, n) {
-    const out = [];
-    for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
-    return out;
-  }
-
-  function parseBGGXml(text) {
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-    const out = {};
-    xml.querySelectorAll('item').forEach(item => {
-      const id = item.getAttribute('id');
-      if (!id) return;
-      const num = el => {
-        const v = item.querySelector(el)?.getAttribute('value');
-        const n = parseFloat(v);
-        return isNaN(n) ? null : n;
-      };
-      out[id] = {
-        thumbnail: item.querySelector('thumbnail')?.textContent?.trim() || null,
-        rating:    num('statistics ratings average'),
-        weight:    num('statistics ratings averageweight'),
-        mintime:   num('minplaytime'),
-        maxtime:   num('maxplaytime'),
-        year:      num('yearpublished'),
-        mechanics: Array.from(item.querySelectorAll('link[type="boardgamemechanic"]'))
-                        .map(l => l.getAttribute('value')).filter(Boolean),
-      };
-    });
-    return out;
-  }
-
-  async function fetchBatch(ids, retry = true) {
-    const url = `https://boardgamegeek.com/xmlapi2/thing?id=${ids.join(',')}&stats=1`;
-    const resp = await fetch(url);
-    if (resp.status === 202 && retry) {        // BGG encolando
-      await new Promise(r => setTimeout(r, 1500));
-      return fetchBatch(ids, false);
-    }
-    if (!resp.ok) throw new Error(`BGG HTTP ${resp.status}`);
-    return parseBGGXml(await resp.text());
-  }
-
-  /* Trae datos BGG (usa cache vigente, pide solo lo faltante) y mergea en allGames */
+  /* ───────────── BGG: snapshot estático ─────────────
+     La API XML de BGG quedó cerrada (devuelve 401 hasta logueado), así que los
+     datos se generan offline y se sirven desde bgg-data.json junto a esta página.
+     Estructura: { [bggId]: { thumbnail, rating, weight, mintime, maxtime, year, mechanics[] } } */
   async function enrichWithBGG() {
     const statusEl = document.getElementById('bgg-status');
-    const cache    = readCache();
-
-    // aplicar cache de inmediato
-    let cachedCount = 0;
-    allGames.forEach(g => {
-      if (g.bggId && cache[g.bggId]) { g.bgg = cache[g.bggId]; cachedCount++; }
-    });
-    if (cachedCount) { populateMechanics(); renderGames(); }
-
-    // ids que faltan en cache
-    const missing = [...new Set(
-      allGames.filter(g => g.bggId && !cache[g.bggId]).map(g => g.bggId)
-    )];
-    if (missing.length === 0) { statusEl.textContent = ''; return; }
-
-    statusEl.textContent = '⏳ trayendo datos de BGG…';
     try {
-      for (const batch of chunk(missing, BGG_BATCH)) {
-        const data = await fetchBatch(batch);
-        Object.assign(cache, data);
-      }
-      writeCache(cache);
-      allGames.forEach(g => { if (g.bggId && cache[g.bggId]) g.bgg = cache[g.bggId]; });
+      const resp = await fetch('bgg-data.json');
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      allGames.forEach(g => { if (g.bggId && data[g.bggId]) g.bgg = data[g.bggId]; });
       statusEl.textContent = '';
       populateMechanics();
       renderGames();
     } catch (err) {
-      statusEl.textContent = 'BGG no disponible';
-      console.warn('BGG fetch falló:', err);
+      statusEl.textContent = '';
+      console.warn('bgg-data.json no disponible:', err);
     }
   }
 
