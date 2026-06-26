@@ -192,6 +192,23 @@
 
     .player-input:focus { border-color: var(--accent-border); }
 
+    .mechanic-select {
+      padding: 5px 28px 5px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      border-radius: 20px;
+      border: 0.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--text-muted);
+      outline: none;
+      max-width: 200px;
+      cursor: pointer;
+      transition: border-color 0.12s, color 0.12s;
+    }
+
+    .mechanic-select:focus { border-color: var(--accent-border); color: var(--text); }
+    .mechanic-select:not([data-all]) { color: var(--accent); border-color: var(--accent-border); }
+
     /* ─── Results bar ─── */
     .results-bar {
       display: flex;
@@ -199,11 +216,17 @@
       justify-content: space-between;
       margin-bottom: 1rem;
       min-height: 32px;
+      gap: 1rem;
     }
 
     .results-count {
       font-size: 13px;
       color: var(--text-muted);
+    }
+
+    .bgg-status {
+      font-size: 12px;
+      color: var(--text-faint);
     }
 
     .random-btn {
@@ -228,24 +251,52 @@
     /* ─── Games grid ─── */
     .games-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-      gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 12px;
     }
 
     .game-card {
       background: var(--surface);
       border: 0.5px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 14px;
+      overflow: hidden;
       transition: border-color 0.12s, transform 0.12s;
+      display: flex;
+      flex-direction: column;
     }
 
     .game-card:hover { border-color: var(--border-strong); }
 
     .game-card.highlight {
       border: 2px solid var(--accent-border);
-      background: var(--accent-bg);
+      box-shadow: 0 0 0 3px var(--accent-bg);
     }
+
+    /* Thumbnail */
+    .game-thumb-wrap {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: var(--bg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .game-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .game-thumb-placeholder {
+      font-size: 30px;
+      opacity: 0.4;
+    }
+
+    .game-body { padding: 12px 14px 14px; }
 
     .game-name {
       font-size: 14px;
@@ -272,6 +323,7 @@
       padding: 2px 8px;
       border-radius: 10px;
       font-weight: 400;
+      white-space: nowrap;
     }
 
     .badge-players {
@@ -280,12 +332,33 @@
       border: 0.5px solid var(--border-strong);
     }
 
+    .badge-meta {
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 0.5px solid var(--border);
+    }
+
+    .badge-rating {
+      background: #fff4e0;
+      color: #8a5a00;
+      border: 0.5px solid #f0c674;
+    }
+
     .badge-eze  { background: #e1f5ee; color: #0a5540; }
     .badge-eli  { background: #eeedfe; color: #3c3489; }
+
+    /* complexity colors */
+    .cx-light  { background: #e3f6e6; color: #1b6b32; border: 0.5px solid #9fd8ad; }
+    .cx-med    { background: #fdf3d8; color: #8a6500; border: 0.5px solid #ecd28a; }
+    .cx-heavy  { background: #fbe4e4; color: #9c2b2b; border: 0.5px solid #e3a6a6; }
 
     @media (prefers-color-scheme: dark) {
       .badge-eze { background: #0d3328; color: #5dcaa5; }
       .badge-eli { background: #1e1a40; color: #afa9ec; }
+      .badge-rating { background: #2e2410; color: #e3b85f; border-color: #5c4a1e; }
+      .cx-light { background: #14301a; color: #6ec684; border-color: #2c5a39; }
+      .cx-med   { background: #322a10; color: #d9b95c; border-color: #5c4e22; }
+      .cx-heavy { background: #331616; color: #df8a8a; border-color: #5e2b2b; }
     }
 
     /* ─── States ─── */
@@ -328,7 +401,7 @@
       .header-inner { padding: 0.9rem 1rem; }
       main { padding: 1rem; }
       .filters { padding: 1rem; gap: 1rem; }
-      .games-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+      .games-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     }
   </style>
 </head>
@@ -340,7 +413,7 @@
       <h1>🎲 Juegos de Eze &amp; Eli</h1>
       <span class="total-badge" id="total-badge">Cargando…</span>
     </div>
-    <button class="refresh-btn" onclick="loadGames()" aria-label="Recargar datos">
+    <button class="refresh-btn" onclick="loadGames(true)" aria-label="Recargar datos">
       ↻ Actualizar
     </button>
   </div>
@@ -376,10 +449,47 @@
         <button class="chip" data-value="abstracto">Abstracto</button>
       </div>
     </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Complejidad</div>
+      <div class="chip-row" id="cx-chips">
+        <button class="chip active" data-value="all">Todas</button>
+        <button class="chip" data-value="light">Liviano</button>
+        <button class="chip" data-value="med">Medio</button>
+        <button class="chip" data-value="heavy">Complejo</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Tiempo</div>
+      <div class="chip-row" id="time-chips">
+        <button class="chip active" data-value="all">Cualquiera</button>
+        <button class="chip" data-value="short">&lt;30 min</button>
+        <button class="chip" data-value="mid">30–60 min</button>
+        <button class="chip" data-value="long">60+ min</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Modo</div>
+      <div class="chip-row" id="mode-chips">
+        <button class="chip active" data-value="all">Todos</button>
+        <button class="chip" data-value="coop">Cooperativo</button>
+        <button class="chip" data-value="comp">Competitivo</button>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Mecánica</div>
+      <select class="mechanic-select" id="mechanic-select" data-all aria-label="Filtrar por mecánica">
+        <option value="all">Todas</option>
+      </select>
+    </div>
   </div>
 
   <div class="results-bar">
     <span class="results-count" id="results-count"></span>
+    <span class="bgg-status" id="bgg-status"></span>
     <button class="random-btn" onclick="pickRandom()">🎲 Sorprendeme</button>
   </div>
 
@@ -389,12 +499,22 @@
 </main>
 
 <script>
+  // URL "Publicar en la web" del sheet (formato /d/e/.../pub que sí responde sin login)
   const CSV_URL  = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTUKKHxfJeS8Ih9L05KXp3URPZVcMlRt6hgyAA2ko_sO_SDWJYHv-SKfe8yfR4n2-vanxR88mUDj0Sb/pub?output=csv';
 
-  let allGames      = [];
-  let selectedOwner = 'all';
-  let selectedCat   = 'all';
-  let highlighted   = null;
+  /* ── BGG config ── */
+  const BGG_BATCH    = 20;
+  const CACHE_KEY    = 'bgg_cache_v1';
+  const CACHE_TTL    = 7 * 24 * 60 * 60 * 1000; // 7 días
+
+  let allGames          = [];
+  let selectedOwner     = 'all';
+  let selectedCat       = 'all';
+  let selectedCx        = 'all';
+  let selectedTime      = 'all';
+  let selectedMode      = 'all';
+  let selectedMechanic  = 'all';
+  let highlighted       = null;
 
   /* ── Parse "Best for" column ── */
   function parsePlayerCount(raw) {
@@ -433,16 +553,152 @@
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      const cols   = parseCSVLine(line);
-      const name   = cols[0] || '';
-      const owner  = (cols[1] || '').trim();
-      const cat    = (cols[2] || '').trim();
+      const cols    = parseCSVLine(line);
+      const name    = cols[0] || '';
+      const owner   = (cols[1] || '').trim();
+      const cat     = (cols[2] || '').trim();
       const bestFor = (cols[3] || '').trim();
+      const bggId   = (cols[4] || '').trim().replace(/[^0-9]/g, ''); // solo dígitos
       if (!name) continue;
       const { min, max } = parsePlayerCount(bestFor);
-      games.push({ name, owner, cat, min, max, bestForRaw: bestFor });
+      games.push({ name, owner, cat, min, max, bestForRaw: bestFor, bggId, bgg: null });
     }
     return games;
+  }
+
+  /* ───────────── BGG: cache ───────────── */
+  function readCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return {};
+      const { ts, data } = JSON.parse(raw);
+      if (!data || Date.now() - ts > CACHE_TTL) return {};
+      return data; // { [bggId]: {...} }
+    } catch { return {}; }
+  }
+
+  function writeCache(data) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+    } catch { /* storage lleno o no disponible: ignorar */ }
+  }
+
+  /* ───────────── BGG: fetch + parse ───────────── */
+  function chunk(arr, n) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  }
+
+  function parseBGGXml(text) {
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const out = {};
+    xml.querySelectorAll('item').forEach(item => {
+      const id = item.getAttribute('id');
+      if (!id) return;
+      const num = el => {
+        const v = item.querySelector(el)?.getAttribute('value');
+        const n = parseFloat(v);
+        return isNaN(n) ? null : n;
+      };
+      out[id] = {
+        thumbnail: item.querySelector('thumbnail')?.textContent?.trim() || null,
+        rating:    num('statistics ratings average'),
+        weight:    num('statistics ratings averageweight'),
+        mintime:   num('minplaytime'),
+        maxtime:   num('maxplaytime'),
+        year:      num('yearpublished'),
+        mechanics: Array.from(item.querySelectorAll('link[type="boardgamemechanic"]'))
+                        .map(l => l.getAttribute('value')).filter(Boolean),
+      };
+    });
+    return out;
+  }
+
+  async function fetchBatch(ids, retry = true) {
+    const url = `https://boardgamegeek.com/xmlapi2/thing?id=${ids.join(',')}&stats=1`;
+    const resp = await fetch(url);
+    if (resp.status === 202 && retry) {        // BGG encolando
+      await new Promise(r => setTimeout(r, 1500));
+      return fetchBatch(ids, false);
+    }
+    if (!resp.ok) throw new Error(`BGG HTTP ${resp.status}`);
+    return parseBGGXml(await resp.text());
+  }
+
+  /* Trae datos BGG (usa cache vigente, pide solo lo faltante) y mergea en allGames */
+  async function enrichWithBGG() {
+    const statusEl = document.getElementById('bgg-status');
+    const cache    = readCache();
+
+    // aplicar cache de inmediato
+    let cachedCount = 0;
+    allGames.forEach(g => {
+      if (g.bggId && cache[g.bggId]) { g.bgg = cache[g.bggId]; cachedCount++; }
+    });
+    if (cachedCount) { populateMechanics(); renderGames(); }
+
+    // ids que faltan en cache
+    const missing = [...new Set(
+      allGames.filter(g => g.bggId && !cache[g.bggId]).map(g => g.bggId)
+    )];
+    if (missing.length === 0) { statusEl.textContent = ''; return; }
+
+    statusEl.textContent = '⏳ trayendo datos de BGG…';
+    try {
+      for (const batch of chunk(missing, BGG_BATCH)) {
+        const data = await fetchBatch(batch);
+        Object.assign(cache, data);
+      }
+      writeCache(cache);
+      allGames.forEach(g => { if (g.bggId && cache[g.bggId]) g.bgg = cache[g.bggId]; });
+      statusEl.textContent = '';
+      populateMechanics();
+      renderGames();
+    } catch (err) {
+      statusEl.textContent = 'BGG no disponible';
+      console.warn('BGG fetch falló:', err);
+    }
+  }
+
+  /* ───────────── Clasificación BGG ───────────── */
+  function cxBucket(g) {
+    const w = g.bgg?.weight;
+    if (w == null) return null;
+    if (w <= 2)   return 'light';
+    if (w <= 3.5) return 'med';
+    return 'heavy';
+  }
+
+  function timeBucket(g) {
+    const t = g.bgg?.maxtime;
+    if (t == null || t === 0) return null;
+    if (t < 30)  return 'short';
+    if (t <= 60) return 'mid';
+    return 'long';
+  }
+
+  function isCoop(g) {
+    if (g.bgg?.mechanics?.some(m => /cooperative/i.test(m))) return true;
+    return /coop/i.test(g.cat);
+  }
+
+  /* Pobla el dropdown con las mecánicas presentes en la colección (preserva selección) */
+  function populateMechanics() {
+    const sel = document.getElementById('mechanic-select');
+    const set = new Set();
+    allGames.forEach(g => g.bgg?.mechanics?.forEach(m => set.add(m)));
+    const mechs = [...set].sort((a, b) => a.localeCompare(b, 'es'));
+    const prev  = selectedMechanic;
+    sel.innerHTML = '<option value="all">Todas</option>' +
+      mechs.map(m => `<option value="${escAttr(m)}">${escHtml(m)}</option>`).join('');
+    if (prev !== 'all' && mechs.includes(prev)) {
+      sel.value = prev;
+    } else {
+      sel.value = 'all';
+      selectedMechanic = 'all';
+    }
+    sel.toggleAttribute('data-all', selectedMechanic === 'all');
   }
 
   /* ── Category matching ── */
@@ -468,11 +724,21 @@
 
   function getFiltered() {
     const p = getPlayers();
-    return allGames.filter(g =>
-      g.min <= p && g.max >= p &&
-      (selectedOwner === 'all' || g.owner === selectedOwner) &&
-      catMatch(g, selectedCat)
-    );
+    return allGames.filter(g => {
+      if (!(g.min <= p && g.max >= p)) return false;
+      if (selectedOwner !== 'all' && g.owner !== selectedOwner) return false;
+      if (!catMatch(g, selectedCat)) return false;
+      // filtros BGG: si no hay dato, solo pasan cuando el filtro está en "all"
+      if (selectedCx   !== 'all' && cxBucket(g)   !== selectedCx)   return false;
+      if (selectedTime !== 'all' && timeBucket(g) !== selectedTime) return false;
+      if (selectedMode !== 'all') {
+        const coop = isCoop(g);
+        if (selectedMode === 'coop' && !coop) return false;
+        if (selectedMode === 'comp' &&  coop) return false;
+      }
+      if (selectedMechanic !== 'all' && !g.bgg?.mechanics?.includes(selectedMechanic)) return false;
+      return true;
+    });
   }
 
   /* ── Render ── */
@@ -480,6 +746,30 @@
     if (g.max >= 99) return g.min + '+';
     if (g.min === g.max) return String(g.min);
     return g.min + '–' + g.max;
+  }
+
+  function timeLabel(g) {
+    const { mintime, maxtime } = g.bgg || {};
+    if (!maxtime) return null;
+    if (mintime && mintime !== maxtime) return `${mintime}–${maxtime} min`;
+    return `${maxtime} min`;
+  }
+
+  function cxLabel(g) {
+    const w = g.bgg?.weight;
+    if (w == null) return null;
+    const b = cxBucket(g);
+    const cls = b === 'light' ? 'cx-light' : b === 'med' ? 'cx-med' : 'cx-heavy';
+    return { cls, text: '⚙ ' + w.toFixed(1) };
+  }
+
+  function thumbHtml(g) {
+    if (g.bgg?.thumbnail) {
+      return `<div class="game-thumb-wrap"><img class="game-thumb" loading="lazy"
+        src="${escAttr(g.bgg.thumbnail)}" alt="${escAttr(g.name)}"
+        onerror="this.parentNode.innerHTML='<span class=&quot;game-thumb-placeholder&quot;>🎲</span>'"></div>`;
+    }
+    return `<div class="game-thumb-wrap"><span class="game-thumb-placeholder">🎲</span></div>`;
   }
 
   function renderGames() {
@@ -496,22 +786,30 @@
     }
 
     content.innerHTML = '<div class="games-grid">' + filtered.map(g => {
-      const hl          = highlighted === g.name ? ' highlight' : '';
-      const ownerClass  = g.owner.toLowerCase() === 'eze' ? 'badge-eze' : 'badge-eli';
-      const catDisplay  = g.cat || '—';
+      const hl         = highlighted === g.name ? ' highlight' : '';
+      const ownerClass = g.owner.toLowerCase() === 'eze' ? 'badge-eze' : 'badge-eli';
+      const catDisplay = g.cat || '—';
+      const rating     = g.bgg?.rating ? `<span class="badge badge-rating">★ ${g.bgg.rating.toFixed(1)}</span>` : '';
+      const cx         = cxLabel(g);
+      const cxBadge    = cx ? `<span class="badge ${cx.cls}">${cx.text}</span>` : '';
+      const tl         = timeLabel(g);
+      const timeBadge  = tl ? `<span class="badge badge-meta">⏱ ${escHtml(tl)}</span>` : '';
       return `<div class="game-card${hl}">
-        <div class="game-name">${escHtml(g.name)}</div>
-        <div class="game-cat">${escHtml(catDisplay)}</div>
-        <div class="game-badges">
-          <span class="badge badge-players">👥 ${playerLabel(g)}</span>
-          <span class="badge ${ownerClass}">${escHtml(g.owner)}</span>
+        ${thumbHtml(g)}
+        <div class="game-body">
+          <div class="game-name">${escHtml(g.name)}</div>
+          <div class="game-cat">${escHtml(catDisplay)}</div>
+          <div class="game-badges">
+            <span class="badge badge-players">👥 ${playerLabel(g)}</span>
+            <span class="badge ${ownerClass}">${escHtml(g.owner)}</span>
+            ${rating}${cxBadge}${timeBadge}
+          </div>
         </div>
       </div>`;
     }).join('') + '</div>';
 
     if (highlighted) {
-      const cards = content.querySelectorAll('.game-card');
-      cards.forEach(c => {
+      content.querySelectorAll('.game-card').forEach(c => {
         if (c.querySelector('.game-name').textContent === highlighted) {
           setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
         }
@@ -520,8 +818,9 @@
   }
 
   function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+  function escAttr(s) { return escHtml(s).replace(/'/g, '&#39;'); }
 
   /* ── Random picker ── */
   function pickRandom() {
@@ -532,21 +831,24 @@
   }
 
   /* ── Load from Google Sheets ── */
-  async function loadGames() {
+  async function loadGames(forceBust) {
     document.getElementById('content').innerHTML =
       '<div class="state-box"><span class="state-icon">⏳</span>Cargando juegos…</div>';
     document.getElementById('total-badge').textContent = 'Cargando…';
     document.getElementById('results-count').textContent = '';
+    document.getElementById('bgg-status').textContent = '';
     highlighted = null;
 
     try {
-      const resp = await fetch(CSV_URL);
+      const url  = forceBust ? `${CSV_URL}&_=${Date.now()}` : CSV_URL;
+      const resp = await fetch(url);
       if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
       const text = await resp.text();
       allGames   = parseCSV(text);
       if (allGames.length === 0) throw new Error('El sheet parece estar vacío o el formato no coincide.');
       document.getElementById('total-badge').textContent = allGames.length + ' juegos';
       renderGames();
+      enrichWithBGG(); // async, no bloquea el render inicial
     } catch (err) {
       document.getElementById('total-badge').textContent = 'Error';
       document.getElementById('results-count').textContent = '';
@@ -572,22 +874,27 @@
     renderGames();
   });
 
-  document.getElementById('owner-chips').addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    document.querySelectorAll('#owner-chips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    selectedOwner = chip.dataset.value;
-    highlighted   = null;
-    renderGames();
-  });
+  function wireChips(containerId, setter) {
+    document.getElementById(containerId).addEventListener('click', e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      document.querySelectorAll('#' + containerId + ' .chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      setter(chip.dataset.value);
+      highlighted = null;
+      renderGames();
+    });
+  }
 
-  document.getElementById('cat-chips').addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    selectedCat = chip.dataset.value;
+  wireChips('owner-chips', v => selectedOwner = v);
+  wireChips('cat-chips',   v => selectedCat   = v);
+  wireChips('cx-chips',    v => selectedCx    = v);
+  wireChips('time-chips',  v => selectedTime  = v);
+  wireChips('mode-chips',  v => selectedMode  = v);
+
+  document.getElementById('mechanic-select').addEventListener('change', e => {
+    selectedMechanic = e.target.value;
+    e.target.toggleAttribute('data-all', selectedMechanic === 'all');
     highlighted = null;
     renderGames();
   });
