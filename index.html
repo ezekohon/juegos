@@ -274,6 +274,7 @@
 
     /* Thumbnail */
     .game-thumb-wrap {
+      position: relative;
       width: 100%;
       aspect-ratio: 16 / 10;
       background: var(--bg);
@@ -284,10 +285,24 @@
       border-bottom: 0.5px solid var(--border);
     }
 
-    .game-thumb {
+    /* fondo borroso = misma portada, para rellenar sin recortar la real */
+    .game-thumb-bg {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transform: scale(1.15);
+      filter: blur(16px) brightness(0.8) saturate(1.1);
+      z-index: 0;
+    }
+
+    .game-thumb {
+      position: relative;
+      z-index: 1;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
       display: block;
     }
 
@@ -685,8 +700,10 @@
 
   function thumbHtml(g) {
     if (g.bgg?.thumbnail) {
-      return `<div class="game-thumb-wrap"><img class="game-thumb" loading="lazy"
-        src="${escAttr(g.bgg.thumbnail)}" alt="${escAttr(g.name)}"
+      const u = escAttr(g.bgg.thumbnail);
+      return `<div class="game-thumb-wrap">
+        <img class="game-thumb-bg" aria-hidden="true" src="${u}" alt="">
+        <img class="game-thumb" loading="lazy" src="${u}" alt="${escAttr(g.name)}"
         onerror="this.parentNode.innerHTML='<span class=&quot;game-thumb-placeholder&quot;>🎲</span>'"></div>`;
     }
     return `<div class="game-thumb-wrap"><span class="game-thumb-placeholder">🎲</span></div>`;
