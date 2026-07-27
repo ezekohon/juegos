@@ -11,6 +11,17 @@
   let searchQuery       = '';
   let highlighted       = null;
 
+  // Correcciones temporales para IDs que estaban mal en la planilla publicada.
+  // Se aplican por nombre hasta que la columna BGG_ID del sheet sea actualizada.
+  const BGG_ID_OVERRIDES = {
+    'Paris': '282954',
+    'Red Cathedral': '227224',
+    'Luna capital': '323613',
+    'Bandido': '191925',
+    'Jungle speed': '8098',
+    'Basta!': '',
+  };
+
   /* ── Parse "Best for" column ── */
   function parsePlayerCount(raw) {
     if (!raw || !raw.trim()) return { min: 1, max: 99 };
@@ -53,7 +64,10 @@
       const owner   = (cols[1] || '').trim();
       const cat     = (cols[2] || '').trim();
       const bestFor = (cols[3] || '').trim();
-      const bggId   = (cols[4] || '').trim().replace(/[^0-9]/g, ''); // solo dígitos
+      const sheetBggId = (cols[4] || '').trim().replace(/[^0-9]/g, ''); // solo dígitos
+      const bggId = Object.prototype.hasOwnProperty.call(BGG_ID_OVERRIDES, name)
+        ? BGG_ID_OVERRIDES[name]
+        : sheetBggId;
       if (!name) continue;
       const { min, max } = parsePlayerCount(bestFor);
       games.push({ name, owner, cat, min, max, bestForRaw: bestFor, bggId, bgg: null });
