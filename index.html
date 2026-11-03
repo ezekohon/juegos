@@ -29,7 +29,9 @@
 
 <main>
   <div id="install-panel" hidden><button class="refresh-btn" id="install-app">Instalar app</button><p id="install-help" hidden>En Safari, tocá Compartir y elegí “Agregar a inicio”. Activá “Abrir como app” si aparece.</p></div>
-  <div class="filters">
+  <details class="filters-panel">
+    <summary>Filtros</summary>
+    <div class="filters">
     <div class="filter-group search-group">
       <label class="filter-label" for="search-input">Buscar</label>
       <div class="search-row">
@@ -39,9 +41,17 @@
     </div>
 
     <div class="filter-group">
-      <div class="filter-label">Jugadores</div>
+      <label class="filter-label" for="best-for-count">Best for</label>
       <div class="player-row">
-        <input type="number" class="player-input" id="player-count" min="1" max="20" value="2" aria-label="Cantidad de jugadores">
+        <input type="number" class="player-input" id="best-for-count" min="1" max="20" placeholder="Cualquiera" aria-label="Best for">
+        <span style="font-size:13px; color:var(--text-muted)">personas</span>
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label" for="player-count">Cantidad de jugadores</label>
+      <div class="player-row">
+        <input type="number" class="player-input" id="player-count" min="1" max="20" placeholder="Cualquiera" aria-label="Cantidad de jugadores">
         <span style="font-size:13px; color:var(--text-muted)">personas</span>
       </div>
     </div>
@@ -102,7 +112,8 @@
         <option value="all">Todas</option>
       </select>
     </div>
-  </div>
+    </div>
+  </details>
 
   <div class="results-bar">
     <span class="results-count" id="results-count"></span>
