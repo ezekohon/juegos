@@ -22,7 +22,7 @@
     'Basta!': '',
   };
 
-  /* ── Parse "Best for" column ── */
+  /* ── Parse player ranges in "Best for" and "Cantidad de jugadores" ── */
   function parsePlayerCount(raw) {
     if (!raw || !raw.trim()) return { min: 1, max: 99 };
     const s = raw.trim().toLowerCase().replace(/\(.*?\)/g, '').trim();
@@ -56,23 +56,53 @@
   function parseCSV(text) {
     const lines = text.replace(/\r/g, '').split('\n');
     const games = [];
+    const headers = parseCSVLine(lines[0] || '').map(normalizeHeader);
+    const column = (...names) => {
+      const index = headers.findIndex(header => names.includes(header));
+      return index === -1 ? null : index;
+    };
+    const columns = {
+      name: column('juego'),
+      owner: column('dueno'),
+      cat: column('categoria'),
+      bestFor: column('best for'),
+      playerCount: column('cantidad de jugadores', 'cantidad jugadores'),
+      bggId: column('bgg_id', 'bgg id'),
+    };
+
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
       const cols    = parseCSVLine(line);
-      const name    = cols[0] || '';
-      const owner   = (cols[1] || '').trim();
-      const cat     = (cols[2] || '').trim();
-      const bestFor = (cols[3] || '').trim();
-      const sheetBggId = (cols[4] || '').trim().replace(/[^0-9]/g, ''); // solo dígitos
+      // Los valores de respaldo mantienen la compatibilidad con el formato anterior.
+      const value = (key, fallback = null) => {
+        const index = columns[key] ?? fallback;
+        return index === null ? '' : (cols[index] || '').trim();
+      };
+      const name    = value('name', 0);
+      const owner   = value('owner', 1);
+      const cat     = value('cat', 2);
+      const bestFor = value('bestFor', 3);
+      const playerCount = value('playerCount');
+      const sheetBggId = value('bggId', 4).replace(/[^0-9]/g, ''); // solo dígitos
       const bggId = Object.prototype.hasOwnProperty.call(BGG_ID_OVERRIDES, name)
         ? BGG_ID_OVERRIDES[name]
         : sheetBggId;
       if (!name) continue;
-      const { min, max } = parsePlayerCount(bestFor);
-      games.push({ name, owner, cat, min, max, bestForRaw: bestFor, bggId, bgg: null });
+      const bestForRange = parsePlayerCount(bestFor);
+      const playerRange = parsePlayerCount(playerCount);
+      games.push({
+        name, owner, cat, bestForRaw: bestFor, playerCountRaw: playerCount,
+        bestForMin: bestForRange.min, bestForMax: bestForRange.max,
+        playerMin: playerRange.min, playerMax: playerRange.max,
+        bggId, bgg: null,
+      });
     }
     return games;
+  }
+
+  function normalizeHeader(value) {
+    return normalizeText(value).replace(/\s+/g, ' ').trim();
   }
 
   const BGG_CACHE_KEY = 'bgg_cache_v2';
@@ -211,17 +241,19 @@
   }
 
   /* ── Filtering ── */
-  function getPlayers() {
-    const v = parseInt(document.getElementById('player-count').value);
-    return isNaN(v) ? 1 : Math.max(1, v);
+  function getPlayerFilter(id) {
+    const v = parseInt(document.getElementById(id).value);
+    return isNaN(v) ? null : Math.max(1, v);
   }
 
   function getFiltered() {
-    const p = getPlayers();
+    const bestForPlayers = getPlayerFilter('best-for-count');
+    const players = getPlayerFilter('player-count');
     const query = normalizeText(searchQuery.trim());
     return allGames.filter(g => {
       if (query && !normalizeText(g.name).includes(query)) return false;
-      if (!(g.min <= p && g.max >= p)) return false;
+      if (bestForPlayers !== null && !(g.bestForMin <= bestForPlayers && g.bestForMax >= bestForPlayers)) return false;
+      if (players !== null && !(g.playerMin <= players && g.playerMax >= players)) return false;
       if (selectedOwner !== 'all' && g.owner !== selectedOwner) return false;
       if (!catMatch(g, selectedCat)) return false;
       // filtros BGG: si no hay dato, solo pasan cuando el filtro está en "all"
@@ -238,10 +270,10 @@
   }
 
   /* ── Render ── */
-  function playerLabel(g) {
-    if (g.max >= 99) return g.min + '+';
-    if (g.min === g.max) return String(g.min);
-    return g.min + '–' + g.max;
+  function playerLabel(min, max) {
+    if (max >= 99) return min + '+';
+    if (min === max) return String(min);
+    return min + '–' + max;
   }
 
   function timeLabel(g) {
@@ -307,7 +339,8 @@
           <div class="game-name">${escHtml(g.name)}</div>
           <div class="game-cat">${escHtml(catDisplay)}</div>
           <div class="game-badges">
-            <span class="badge badge-players">👥 ${playerLabel(g)}</span>
+            <span class="badge badge-players">👥 ${playerLabel(g.playerMin, g.playerMax)}</span>
+            <span class="badge badge-meta">Best for ${playerLabel(g.bestForMin, g.bestForMax)}</span>
             <span class="badge ${ownerClass}">${escHtml(g.owner)}</span>
             ${rating}${cxBadge}${timeBadge}
           </div>
@@ -376,10 +409,10 @@
   }
 
   /* ── Event listeners ── */
-  document.getElementById('player-count').addEventListener('input', () => {
+  ['best-for-count', 'player-count'].forEach(id => document.getElementById(id).addEventListener('input', () => {
     highlighted = null;
     renderGames();
-  });
+  }));
 
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value;
