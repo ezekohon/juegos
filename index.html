@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#3b5bdb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Juegos">
+  <link rel="apple-touch-icon" href="/icon-180.png">
   <title>Juegos — Eze & Eli</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,6 +28,7 @@
 </header>
 
 <main>
+  <div id="install-panel" hidden><button class="refresh-btn" id="install-app">Instalar app</button><p id="install-help" hidden>En Safari, tocá Compartir y elegí “Agregar a inicio”. Activá “Abrir como app” si aparece.</p></div>
   <div class="filters">
     <div class="filter-group search-group">
       <label class="filter-label" for="search-input">Buscar</label>
@@ -110,5 +116,6 @@
 </main>
 
 <script type="module" src="src/app.js"></script>
+<script type="module" src="src/install.js"></script>
 </body>
 </html>
