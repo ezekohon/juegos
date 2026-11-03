@@ -458,3 +458,7 @@
       .search-group, .search-input { width: 100%; }
       .games-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
     }
+
+    #install-panel { margin-bottom: 18px; }
+    #install-panel[hidden], #install-help[hidden] { display: none; }
+    #install-help { margin-top: 10px; color: var(--text-muted); font-size: 14px; line-height: 1.5; }
